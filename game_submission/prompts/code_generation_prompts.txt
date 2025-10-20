@@ -1,0 +1,4 @@
+1. Write the full JavaScript code for the `handleClimateEvent()` function that selects a random event ('saline', 'flood', 'none') based on weighted probability and assigns a damage chance to it.
+2. Generate the CSS styles for the following cell states: `.saline` (grey/white, animated) and `.flooded` (blue, strong border).
+3. Create a JavaScript function `getAdjacentProtection(r, c, eventType)` that checks the 4 surrounding cells on the board and returns true if an appropriate defensive structure is found (Dyke for Flood, Mangrove for Saline).
+4. Write the JavaScript logic for the `salt-crop` action within `handleCellClick`: it should cost 50 funds, reduce time by 1, and can be placed on 'farmland' or 'saline' tiles. If placed on a 'saline' tile, it must increment the `farmlandCount` by one (representing successful land recovery).

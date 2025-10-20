@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Delta Defense: Trò chơi chiến lược bảo vệ Đồng bằng Sông Cửu Long khỏi biến đổi khí hậu.">
+    <title>Delta Defense - Thách Thức Biến Đổi Khí Hậu</title>
+    <style>
+        /* CSS được tinh chỉnh */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .screen { padding: 40px 20px; text-align: center; }
+        .hidden { display: none; }
+
+        /* MENU SCREEN STYLING */
+        #menu-screen h1 { font-size: 3em; color: #2e7d32; margin-bottom: 5px; }
+        #menu-screen h2 { font-size: 1.5em; color: #4CAF50; margin-top: 0; }
+        #menu-screen button { padding: 15px 30px; font-size: 1.2em; background-color: #2e7d32; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        #menu-screen button:hover { background-color: #4CAF50; }
+        .instructions { margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; padding: 20px; background-color: #e8f5e9; border-radius: 5px; }
+
+        /* PLAY SCREEN LAYOUT */
+        #play-screen { 
+            display: flex; 
+            height: 100vh; 
+            align-items: stretch; /* Đảm bảo các thành phần kéo dài hết chiều cao */
+            padding: 0;
+        } 
+        #sidebar { 
+            width: 300px; 
+            padding: 20px; 
+            background-color: #fff; 
+            border-right: 1px solid #ccc; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Đẩy UI lên trên, nhân vật xuống dưới */
+        }
+        #game-area {
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+
+        /* GAME BOARD 25x25 */
+        #game-board { 
+            flex-grow: 1; /* Chiếm toàn bộ không gian còn lại */
+            display: grid; 
+            grid-template-columns: repeat(25, 1fr); 
+            grid-template-rows: repeat(25, 1fr); 
+            gap: 1px; 
+            margin: 0;
+            border: 2px solid #555;
+            background-color: #7cb342;
+        }
+
+        /* TILES & STATES */
+        .tile { 
+            border: 1px solid #ccc; 
+            background-color: #9ccc65; /* Đất Nông nghiệp */
+            cursor: pointer; 
+            transition: background-color 0.1s;
+        }
+        .dyke { background-color: #795548; } /* Đê nâu */
+        .mangrove { background-color: #388e3c; } /* Rừng xanh đậm */
+        .rice { background-color: #e0f2f1; } /* Lúa chịu mặn */
+        .damaged { background-color: #ff5252; border: 2px solid red; } /* Hư hỏng đỏ */
+        .action-btn { margin: 5px 0; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%; }
+        .action-btn:hover { background-color: #45a049; }
+        #end-turn-btn { margin-top: 20px; padding: 15px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1.1em; }
+        
+        /* CHARACTER & UNIVERSITY NAME */
+        .character-box { 
+            text-align: center; 
+            padding-top: 20px; 
+            border-top: 1px solid #eee;
+        }
+        .university-name { 
+            font-weight: bold; 
+            color: #004d40; 
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        /* MESSAGE LOG */
+        #message-log { 
+            margin-top: 15px; 
+            padding: 10px; 
+            background-color: #fff3e0; 
+            border: 1px solid #ff9800; 
+            min-height: 50px; 
+            text-align: left;
+        }
+        .summary-text { font-size: 18px; }
+        
+        /* UPGRADE PANEL */
+        #upgrade-panel { 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background-color: #fff; 
+            border: 2px solid #333; 
+            padding: 30px; 
+            z-index: 20; 
+            display: none; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu-screen" class="screen">
+        <h1>DELTA DEFENSE</h1>
+        <h2>Bảo Vệ Đồng Bằng Sông Cửu Long</h2>
+        <p>Vấn đề: Nước biển dâng, xâm nhập mặn và lũ lụt. Bạn có 8 mùa để thích nghi và bảo vệ cộng đồng.</p>
+        <label for="difficulty-select">Chọn Độ Khó:</label>
+        <select id="difficulty-select">
+            <option value="easy">Dễ (Ít Sự Kiện)</option>
+            <option value="medium" selected>Trung Bình</option>
+            <option value="hard">Khó (Thiệt Hại Lớn)</option>
+            <option value="hell">Địa Ngục</option>
+            <option value="destruction">Hủy Diệt</option>
+        </select>
+        <button onclick="startGame(document.getElementById('difficulty-select').value)">BẮT ĐẦU CHIẾN DỊCH</button>
+        <div class="instructions">
+            <h3>Luật Chơi</h3>
+            <ul>
+                <li>Quản lý <strong>Tiền</strong> và <strong>Thời gian</strong> (số hành động mỗi mùa).</li>
+                <li>Xây dựng: <em>Đê</em> (chống lũ), <em>Rừng Ngập Mặn</em> (chống mặn), <em>Lúa Chịu Mặn</em> (sản xuất & thích nghi).</li>
+                <li>Mục tiêu: Giữ ít nhất 10% (63 ô) đất nông nghiệp sau 8 mùa để thắng.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="play-screen" class="screen hidden">
+        <aside id="sidebar" aria-label="Thông tin và hành động trò chơi">
+            <div>
+                <div id="game-info">
+                    <h3>Mùa: <span id="current-season">1</span>/20</h3>
+                    <p>💰 Tiền (Vốn): <span id="funds-display">3000</span></p>
+                    <p>⏳ Hành động (còn): <span id="time-display">100</span></p>
+                    <p>🌾 Đất Nông nghiệp: <span id="farmland-health-display">625</span>/625</p>
+                    <p>🏆 Điểm: <span id="score-display">0</span></p>
+                </div>
+                
+                <div id="action-panel">
+                    <h4>Hành Động Chiến Lược</h4>
+                    <button id="dyke-btn" data-action="dyke" class="action-btn" onclick="selectAction('dyke')">Xây Đê (150)</button>
+                    <button id="mangrove-btn" data-action="mangrove" class="action-btn" onclick="selectAction('mangrove')">Trồng Rừng (100)</button>
+                    <button id="rice-btn" data-action="rice" class="action-btn" onclick="selectAction('rice')">Trồng Lúa Chịu Mặn (50)</button>
+                    <button id="cancel-btn" class="action-btn" onclick="selectAction(null)">Hủy Chọn</button>
+                </div>
+                
+                <button id="end-turn-btn" onclick="endTurn()">KẾT THÚC MÙA</button>
+                <div id="message-log" role="log" aria-live="polite"></div>
+            </div>
+
+            <div class="character-box">
+                <p class="university-name">GIA DINH UNIVERSITY</p>
+                <img src="https://i.ibb.co/6P9V1Nf/character-placeholder.png" alt="Nhân vật đại diện cho người chơi" width="100">
+            </div>
+        </aside>
+        
+        <div id="game-area">
+            <h2 id="event-banner" style="color: #f44336; margin-bottom: 10px; display:none;">THIÊN TAI ẨN CHỨA...</h2>
+            
+            <div id="game-board" aria-label="Bản đồ lưới 25x25 đại diện cho đồng bằng">
+                </div>
+        </div>
+    </div>
+
+    <div id="results-screen" class="screen hidden">
+        <h1 id="final-status">KẾT THÚC CHIẾN DỊCH</h1>
+        <p class="summary-text">Bạn đã sinh tồn qua <span id="final-season"></span> mùa.</p>
+        <p class="summary-text">Số ô đất còn lại: <span id="final-farmland"></span>/625</p>
+        <p class="summary-text">Tiền còn lại: <span id="final-funds"></span></p>
+        <p class="summary-text">Điểm cuối: <span id="final-score"></span></p>
+        <button id="restart-btn" onclick="restartGame()">Chơi Lại</button>
+    </div>
+
+    <div id="upgrade-panel">
+        <h3>Nâng Cấp Sau Khi Kết Thúc</h3>
+        <p>Sử dụng điểm để nâng cấp cho lần chơi tiếp theo:</p>
+        <button class="action-btn" onclick="upgrade('funds')">Tăng Tiền Ban Đầu (+200 Điểm)</button>
+        <button class="action-btn" onclick="upgrade('actions')">Tăng Hành Động Mỗi Mùa (+1, 100 Điểm)</button>
+        <button class="action-btn" onclick="upgrade('resistance')">Tăng Kháng Khí Hậu (50 Điểm)</button>
+        <button class="action-btn" onclick="closeUpgrade()">Đóng</button>
+    </div>
+
+    <script>
+        // === BIẾN TOÀN CỤC & THIẾT LẬP ===
+        const GRID_SIZE = 25; // Giảm xuống 25x25 = 625 ô
+        const INITIAL_TILES = GRID_SIZE * GRID_SIZE;
+        const MIN_FARMLAND_THRESHOLD = 0.1; // Thua nếu còn dưới 10% (63 ô)
+        const MAX_SEASONS = 8;
+
+        let season = 1;
+        let funds = 1000;
+        let actions = 10;
+        let farmland = INITIAL_TILES;
+        let score = 0;
+        let difficulty = 'medium';
+        let selectedAction = null;
+        let board = []; // Mảng 2D: 0 = đất, 1 = đê, 2 = rừng, 3 = lúa, -1 = hư hỏng (damaged)
+        let upgrades = { funds: 0, actions: 0, resistance: 0 }; // Theo dõi nâng cấp
+
+        const ACTION_COSTS = { 'dyke': 150, 'mangrove': 100, 'rice': 50 };
+
+        // === KHỞI TẠO & UI ===
+
+        function initBoard() {
+            const boardElement = document.getElementById('game-board');
+            boardElement.innerHTML = '';
+            board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0)); // Tất cả là đất (0)
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.dataset.x = i;
+                    tile.dataset.y = j;
+                    tile.addEventListener('click', () => buildOnTile(i, j));
+                    boardElement.appendChild(tile);
+                }
+            }
+        }
+
+        function startGame(diff) {
+            difficulty = diff;
+            const diffSettings = {
+                easy: { funds: 1500, actions: 12, damage: 0.5, eventChance: 0.3 },
+                medium: { funds: 1000, actions: 10, damage: 1.0, eventChance: 0.5 },
+                hard: { funds: 800, actions: 8, damage: 1.5, eventChance: 0.7 },
+                hell: { funds: 600, actions: 6, damage: 2.0, eventChance: 0.8 },
+                destruction: { funds: 500, actions: 5, damage: 3.0, eventChance: 0.9 }
+            }[difficulty];
+
+            season = 1;
+            funds = diffSettings.funds + upgrades.funds * 200;
+            actions = diffSettings.actions + upgrades.actions;
+            farmland = INITIAL_TILES;
+            score = 0;
+            selectedAction = null;
+            
+            initBoard();
+            updateUI();
+            
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('play-screen').classList.remove('hidden');
+            document.getElementById('upgrade-panel').style.display = 'none';
+            document.getElementById('event-banner').style.display = 'none';
+            logMessage('Chiến dịch bắt đầu! Lựa chọn chiến lược cho Mùa 1.');
+        }
+
+        function updateUI() {
+            document.getElementById('current-season').textContent = season;
+            document.getElementById('funds-display').textContent = funds;
+            document.getElementById('time-display').textContent = actions;
+            document.getElementById('farmland-health-display').textContent = farmland;
+            document.getElementById('score-display').textContent = score;
+        }
+
+        function updateTile(x, y) {
+            const tiles = document.querySelectorAll('.tile');
+            const index = x * GRID_SIZE + y;
+            const tileValue = board[x][y];
+            
+            let className = 'tile ';
+            if (tileValue === 1) className += 'dyke';
+            else if (tileValue === 2) className += 'mangrove';
+            else if (tileValue === 3) className += 'rice';
+            else if (tileValue === -1) className += 'damaged';
+            
+            tiles[index].className = className;
+        }
+
+        function logMessage(msg) {
+            document.getElementById('message-log').textContent = msg;
+        }
+
+        // === LOGIC HÀNH ĐỘNG ===
+
+        function selectAction(action) {
+            // Logic hủy chọn nếu click lại nút đó hoặc click nút Hủy
+            if (selectedAction === action || action === null) {
+                selectedAction = null;
+                logMessage('Hủy chọn.');
+                // Xóa highlight trên button
+                document.querySelectorAll('.action-btn').forEach(btn => btn.style.border = 'none');
+                return;
+            }
+
+            selectedAction = action;
+            logMessage(`Đã chọn: ${action === 'dyke' ? 'Xây Đê' : action === 'mangrove' ? 'Trồng Rừng' : 'Trồng Lúa Chịu Mặn'}.`);
+            // Highlight button đã chọn
+            document.querySelectorAll('.action-btn').forEach(btn => btn.style.border = 'none');
+            document.getElementById(`${action}-btn`).style.border = '2px solid #ff9800';
+        }
+
+        function buildOnTile(x, y) {
+            if (!selectedAction || actions <= 0) {
+                logMessage('Không có hành động nào được chọn hoặc đã hết hành động!');
+                return;
+            }
+            
+            const cost = ACTION_COSTS[selectedAction];
+            const tileStatus = board[x][y];
+
+            if (funds < cost) {
+                logMessage('Không đủ tiền!');
+                return;
+            }
+            
+            // Chỉ cho phép xây dựng trên đất thường (0) hoặc đất bị hư (-1)
+            if (tileStatus !== 0 && tileStatus !== -1) {
+                logMessage('Ô này đã được xây dựng!');
+                return;
+            }
+            
+            // Xử lý Hồi phục: nếu xây lúa trên đất hư, coi như hồi phục
+            if (tileStatus === -1 && selectedAction === 'rice') {
+                farmland++;
+                logMessage(`Đất tại (${x}, ${y}) đã được hồi phục và trồng lúa chịu mặn!`);
+            } else if (tileStatus === 0 && selectedAction === 'rice') {
+                logMessage(`Đã trồng lúa chịu mặn tại (${x}, ${y}).`);
+            } else if (tileStatus === -1 && (selectedAction === 'dyke' || selectedAction === 'mangrove')) {
+                logMessage('Không thể xây đê/rừng trên đất hư hại, hãy trồng lúa để hồi phục trước.');
+                return;
+            }
+
+
+            // Cập nhật trạng thái
+            board[x][y] = selectedAction === 'dyke' ? 1 : selectedAction === 'mangrove' ? 2 : 3;
+            funds -= cost;
+            actions--;
+            
+            updateTile(x, y);
+            updateUI();
+            
+            // Tự động hủy chọn sau khi xây
+            selectAction(null); 
+        }
+
+        // === LOGIC THIÊN TAI (QUAN TRỌNG) ===
+
+        function getDamageChance() {
+            const baseChance = { easy: 0.3, medium: 0.4, hard: 0.5, hell: 0.6, destruction: 0.7 }[difficulty];
+            return baseChance * (1 - upgrades.resistance * 0.1); // Giảm nhờ nâng cấp
+        }
+
+        function getAdjacentProtection(x, y, eventType) {
+            const neighbors = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // 4 hướng chính
+            for (const [dx, dy] of neighbors) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+                    const neighborStatus = board[nx][ny];
+                    if ((eventType === 'flood' && neighborStatus === 1) || // 1 = Dyke
+                        (eventType === 'salinity' && neighborStatus === 2)) { // 2 = Mangrove
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function handleClimateEvent() {
+            const eventChance = { easy: 0.4, medium: 0.6, hard: 0.8, hell: 0.9, destruction: 1.0 }[difficulty];
+            const eventBanner = document.getElementById('event-banner');
+            let totalDamage = 0;
+
+            if (Math.random() < eventChance) {
+                const eventType = Math.random() < 0.5 ? 'flood' : 'salinity';
+                const eventName = eventType === 'flood' ? 'LŨ LỤT' : 'XÂM NHẬP MẶN';
+                const damageChance = getDamageChance();
+
+                eventBanner.textContent = `THIÊN TAI: ${eventName} TẤN CÔNG!`;
+                eventBanner.style.color = '#f44336';
+                eventBanner.style.display = 'block';
+
+                // Gây thiệt hại trên lưới
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    for (let j = 0; j < GRID_SIZE; j++) {
+                        const tileStatus = board[i][j];
+                        
+                        // Chỉ ảnh hưởng đến đất thường (0) hoặc lúa (3)
+                        if (tileStatus === 0 || tileStatus === 3) {
+                            let currentDamageChance = damageChance;
+
+                            // Miễn nhiễm (Lúa chịu mặn miễn nhiễm với Mặn)
+                            if (tileStatus === 3 && eventType === 'salinity') continue; 
+
+                            // Giảm nhờ công trình lân cận
+                            if (getAdjacentProtection(i, j, eventType)) {
+                                currentDamageChance *= 0.4; // Giảm 60% rủi ro
+                            }
+
+                            if (Math.random() < currentDamageChance) {
+                                if (tileStatus !== -1) { // Chỉ giảm farmland nếu ô chưa bị hư
+                                    farmland--;
+                                }
+                                board[i][j] = -1; // Hư hỏng
+                                totalDamage++;
+                                updateTile(i, j);
+                            }
+                        }
+                    }
+                }
+                logMessage(`MÙA BÃO TỐ: ${eventName}. Thiệt hại: ${totalDamage} ô đất.`);
+            } else {
+                eventBanner.textContent = 'MÙA BÌNH YÊN. Bạn có thể kiếm thêm tiền.';
+                eventBanner.style.color = '#4CAF50';
+                eventBanner.style.display = 'block';
+                logMessage('MÙA BÌNH YÊN. Thu nhập tốt hơn.');
+            }
+        }
+
+        function endTurn() {
+            // 1. Kiểm tra GAME OVER (Thất bại)
+            if (farmland <= INITIAL_TILES * MIN_FARMLAND_THRESHOLD) {
+                return endGame('DEFEAT');
+            }
+
+            // 2. Thu nhập dựa trên đất còn lại (sản xuất)
+            funds += farmland * 10; 
+            
+            // 3. Xử lý Sự kiện Khí hậu
+            handleClimateEvent();
+
+            season++;
+            actions = 10 + upgrades.actions; // Reset hành động
+            score = farmland * 10 + funds; // Cập nhật điểm
+            
+            // 4. Kiểm tra GAME OVER (Chiến thắng)
+            if (season > MAX_SEASONS) {
+                return endGame('VICTORY');
+            }
+            
+            updateUI();
+        }
+
+        // === KẾT THÚC & NÂNG CẤP ===
+
+        function endGame(status) {
+            document.getElementById('play-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            
+            document.getElementById('final-season').textContent = season - 1;
+            document.getElementById('final-farmland').textContent = farmland;
+            document.getElementById('final-funds').textContent = funds;
+            document.getElementById('final-score').textContent = score;
+            
+            document.getElementById('final-status').textContent = status === 'VICTORY' ? 'THẮNG LỢI VĨ ĐẠI!' : 'THẤT BẠI THẢM KHỐC!';
+            
+            document.getElementById('upgrade-panel').style.display = 'block';
+            document.getElementById('upgrade-panel').style.position = 'fixed'; // Đảm bảo nó nổi lên trên
+        }
+
+        function upgrade(type) {
+            const cost = type === 'funds' ? 200 : type === 'actions' ? 100 : 50;
+            if (score >= cost) {
+                score -= cost;
+                upgrades[type]++;
+                logMessage(`Đã nâng cấp ${type}! Chi phí: ${cost} điểm.`);
+                updateUI();
+            } else {
+                logMessage('Không đủ điểm để nâng cấp!');
+            }
+        }
+
+        function closeUpgrade() {
+            document.getElementById('upgrade-panel').style.display = 'none';
+        }
+
+        function restartGame() {
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+            document.getElementById('upgrade-panel').style.display = 'none';
+        }
+
+        // Khởi động Menu khi tải trang
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menu-screen').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

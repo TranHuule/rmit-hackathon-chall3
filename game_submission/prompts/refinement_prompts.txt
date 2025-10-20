@@ -1,0 +1,4 @@
+1. The `farmlandCount` is decrementing multiple times during one `handleClimateEvent` call. Review the logic and ensure it only decrements if the land is changing from an *undamaged* state to a *damaged* state.
+2. The CSS for the Play Screen is not aligning the sidebar and game board correctly on mobile viewports. Provide a media query using Flexbox to make the sidebar stack on top of the game board on screens smaller than 800px.
+3. I am encountering a bug where the 'End Season' button can be pressed even when time is 0. Add a check in `endTurn()` to prevent this and provide a visual feedback to the user.
+4. Review the `updateUI()` function to ensure the `farmland-health-display` is correctly showing the fraction (e.g., 20/25).

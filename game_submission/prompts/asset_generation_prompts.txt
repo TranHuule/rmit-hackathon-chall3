@@ -1,0 +1,4 @@
+1. Create 2D pixel art background image for a simple web game's main menu, featuring a stylized Mekong Delta village with mangroves.
+2. Generate a 32x32 pixel sprite for a 'Salinized Farmland' tile—make it look like dry, cracked earth with white salt residue.
+3. Generate icons for the three actions: 'Dyke' (a small earth wall), 'Mangrove' (a cluster of trees), and 'Salt-tolerant Crop' (a pale green rice stalk).
+4. Create a game over screen background showing either a resilient, green delta or a damaged, flooded delta.
