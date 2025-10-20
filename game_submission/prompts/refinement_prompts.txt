@@ -1,0 +1,4 @@
+- "CSS lật thẻ 3D không hoạt động, hãy sửa lại code."
+- "Làm thế nào để thêm một màn hình kết quả (result screen) vào code game này?"
+- "Code JS bị lỗi 'firstCard is null', kiểm tra giúp tôi hàm flipCard."
+- "Căn giữa nút 'Play' theo chiều dọc và chiều ngang."

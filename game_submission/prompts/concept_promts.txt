@@ -1,0 +1,3 @@
+- "Brainstorm 5 ý tưởng game 2D (HTML/CSS/JS) về chủ đề sức khỏe tinh thần tại Việt."
+- "Lên ý tưởng game thẻ bài đơn giản về ngày 20/10."
+- "Cơ chế game nào phù hợp để truyền tải thông điệp về 'sự đồng cảm'?"

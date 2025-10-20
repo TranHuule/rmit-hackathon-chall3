@@ -1,0 +1,21 @@
+# ============================================
+# Prompt: Vietnamese Women’s Day Card Game (Code Generation)
+# ============================================
+
+Task:
+Generate a playable, browser-based **2D card matching game** celebrating **Vietnamese Women’s Day (October 20th)**.
+
+---
+
+### 🧩 Core Technical Specifications
+- **Language stack:** HTML, CSS, and JavaScript (Vanilla JS or p5.js).
+- **Game type:** Card matching / memory flip game.
+- **Deployment:** Must run locally in browser without backend.
+- **Structure:**
+
+
+---
+
+### 🎯 Game Concept
+- **Theme:** Celebrate Vietnamese Women’s Day (20/10) by promoting positivity, family values, and empowerment.
+(Và tiếp tục dán toàn bộ phần còn lại của prompt đó...)
